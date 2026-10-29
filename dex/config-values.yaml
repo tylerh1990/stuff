@@ -1,0 +1,56 @@
+config:
+  issuer: https://dex.k8s.hasapes.net/dex
+  storage:
+    type: postgres
+    config:
+      host: dex-db-rw.dex.svc
+      port: 5432
+      database: dex
+      user: "${DEX_DB_USER}"
+      password: "${DEX_DB_PASSWORD}"
+      ssl:
+        mode: verify-full
+        caFile: /etc/dex-certs/postgres/ca.crt
+  enablePasswordDB: false
+  sessions:
+    absoluteLifetime: 24h
+    validIfNotUsedFor: 1h
+    ssoSharedWithDefault: all
+  oauth2:
+    skipApprovalScreen: true
+  staticClients:
+    - id: dex-test
+      name: Dex test
+      redirectURIs:
+        - https://dex-test.k8s.hasapes.net/oauth2/callback
+      secretEnv: DEX_TEST_CLIENT_SECRET
+    - id: dex-test2
+      name: Dex test 2
+      redirectURIs:
+        - https://dex-test2.k8s.hasapes.net/oauth2/callback
+      secretEnv: DEX_TEST2_CLIENT_SECRET
+  connectors:
+    - type: ldap
+      id: ldaps
+      name: LDAPS
+      config:
+        host: "${LDAP_DOMAIN}:636"
+        rootCA: /etc/dex-certs/ldap/ca.crt
+        bindDN: "${LDAP_BIND_DN}"
+        bindPW: "${DEX_LDAP_BIND_PASSWORD}"
+        usernamePrompt: "${LDAP_DOMAIN} Username"
+        userSearch:
+          baseDN: "${BASE_DN}"
+          filter: (objectClass=person)
+          username: sAMAccountName
+          idAttr: DN
+          emailAttr: userPrincipalName
+          nameAttr: cn
+          preferredUsernameAttr: sAMAccountName
+        groupSearch:
+          baseDN: "${BASE_DN}"
+          filter: (objectClass=group)
+          userMatchers:
+            - userAttr: DN
+              groupAttr: member
+          nameAttr: cn
